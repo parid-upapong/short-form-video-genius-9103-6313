@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+openai
+pydantic
+moviepy
+elevenlabs
+python-multipart
+redis
+celery
