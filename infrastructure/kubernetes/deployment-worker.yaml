@@ -1,0 +1,47 @@
+# The "Virtual Editor" Worker Pod Definition
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: video-worker
+  namespace: overlord-processing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: video-worker
+  template:
+    metadata:
+      labels:
+        app: video-worker
+    spec:
+      containers:
+      - name: video-processor
+        image: overlord/video-worker:latest
+        resources:
+          limits:
+            nvidia.com/gpu: 1 # Requests 1 dedicated GPU
+            memory: "16Gi"
+            cpu: "4"
+        volumeMounts:
+        - name: efs-cache
+          mountPath: /data/render_scratch
+        env:
+        - name: S3_ASSET_BUCKET
+          value: "overlord-media-assets-prod"
+      volumes:
+      - name: efs-cache
+        persistentVolumeClaim:
+          claimName: efs-claim
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: efs-claim
+  namespace: overlord-processing
+spec:
+  accessModes:
+    - ReadWriteMany # Allows multiple GPU workers to work on the same video project
+  storageClassName: efs-sc
+  resources:
+    requests:
+      storage: 500Gi
